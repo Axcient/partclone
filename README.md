@@ -52,4 +52,8 @@ Limitations:
 
   - Filesystem being backedup must be unmounted and inaccessible to other programs.
 
-For more info about partclone, check our website http://partclone.org or github-wiki.
+This product includes a modified version of partclone, which is licensed under GNU General Public License version 2.
+You may obtain the complete corresponding source code for partclone, including our modifications, 
+by following https://github.com/Axcient/partclone.git
+
+For more info about partclone, check website http://partclone.org or github-wiki.
