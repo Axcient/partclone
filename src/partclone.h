@@ -131,6 +131,7 @@ struct cmd_opt
     int checksum_mode;
     int reseed_checksum;
     unsigned long blocks_per_checksum;
+    unsigned int min_block_size;
 };
 typedef struct cmd_opt cmd_opt;
 

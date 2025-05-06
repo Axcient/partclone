@@ -269,6 +269,7 @@ void usage(void) {
 		"    -f,  --UI-fresh         Fresh times of progress\n"
 		"    -B,  --no_block_detail  Show progress message without block detail\n"
 		"    -z,  --buffer_size SIZE Read/write buffer size (default: %d)\n"
+		"    -m,  --min_block_size SIZE Min align cluster. If more than cluster then need to collapse bitmap\n"
 #ifndef CHKIMG
 		"    -q,  --quiet            Disable progress message\n"
 		"    -E,  --offset=X         Add offset X (bytes) to OUTPUT\n"
@@ -331,13 +332,13 @@ static void save_program_name(const char* argv0) {
 void parse_options(int argc, char **argv, cmd_opt* opt) {
 
 #if CHKIMG
-	static const char *sopt = "-hvd::L:s:f:CFiBz:Nn:";
+	static const char *sopt = "-hvd::L:s:f:CFiBz:Nn:m:";
 #elif RESTORE
-	static const char *sopt = "-hvd::L:o:O:s:f:CFINiqWBz:E:n:Tt";
+	static const char *sopt = "-hvd::L:o:O:s:f:CFINiqWBz:E:n:Ttm:";
 #elif DD
-	static const char *sopt = "-hvd::L:o:O:s:f:CFINiqWBz:E:n:Tt";
+	static const char *sopt = "-hvd::L:o:O:s:f:CFINiqWBz:E:n:Ttm:";
 #else
-	static const char *sopt = "-hvd::L:cx:brDo:O:s:f:RCFINiqWBz:E:a:k:Kn:Tt";
+	static const char *sopt = "-hvd::L:cx:brDo:O:s:f:RCFINiqWBz:E:a:k:Kn:Ttm:";
 #endif
 
 	static const struct option lopt[] = {
@@ -354,6 +355,7 @@ void parse_options(int argc, char **argv, cmd_opt* opt) {
 		{ "force",		no_argument,		NULL,   'F' },
 		{ "no_block_detail",	no_argument,		NULL,   'B' },
 		{ "buffer_size",	required_argument,	NULL,   'z' },
+		{ "min_block_size",	required_argument,	NULL,   'm' },
 		{ "write-direct-io",	no_argument,	        NULL,   OPT_WRITE_DIRECT_IO },
 		{ "read-direct-io",	no_argument,	        NULL,   OPT_READ_DIRECT_IO },
 // not RESTORE and not CHKIMG
@@ -411,6 +413,7 @@ void parse_options(int argc, char **argv, cmd_opt* opt) {
 	opt->checksum_mode = CSM_CRC32;
 	opt->reseed_checksum = 1;
 	opt->blocks_per_checksum = 0;
+	opt->min_block_size = 0;
 	opt->blockfile = 0;
         opt->write_direct_io = 0;
         opt->read_direct_io = 0;
@@ -481,6 +484,10 @@ void parse_options(int argc, char **argv, cmd_opt* opt) {
 			case 'z':
                 assert(optarg != NULL);
 				opt->buffer_size = atol(optarg);
+				break;
+			case 'm':
+				assert(optarg != NULL);
+				opt->min_block_size = atol(optarg);
 				break;
 #ifndef CHKIMG
 #ifndef RESTORE
