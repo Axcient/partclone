@@ -66,6 +66,27 @@ cmd_opt opt;
 /// cmd_opt structure defined in partclone.h
 fs_cmd_opt fs_opt;
 
+static inline unsigned long long ceil_div(unsigned long long a, unsigned long long b)
+{
+	return (a + b - 1) / b;
+}
+
+static void rescale_bitmap(file_system_info* fs_info, unsigned long* bitmap, unsigned int min_block_size, int pui)
+{
+	if(fs_info->block_size >= min_block_size) return;
+	log_mesg(0, 0, 1, fs_opt.debug, "Remap bitmap %lld->%lld Please wait... \n", fs_info->block_size, min_block_size);
+
+	if(min_block_size % fs_info->block_size != 0)
+	{
+		log_mesg(0, 1, 1, fs_opt.debug, "Unaligned rescale bitmap %lld->%lld\n", fs_info->block_size, min_block_size);
+		return;
+	}
+	pc_rescale_bitmap(bitmap, fs_info->totalblock, min_block_size / fs_info->block_size, &fs_info->usedblocks);
+
+	fs_info->totalblock = ceil_div(fs_info->totalblock*fs_info->block_size, min_block_size);
+	fs_info->superBlockUsedBlocks = ceil_div(fs_info->superBlockUsedBlocks*fs_info->block_size, min_block_size);
+	fs_info->block_size = min_block_size;
+}
 /**
  * main function - for clone or restore data
  */
@@ -236,6 +257,7 @@ int main(int argc, char **argv) {
 		/// read and check bitmap from partition
 		log_mesg(0, 0, 1, debug, "Calculating bitmap... Please wait... \n");
 		read_bitmap(source, fs_info, bitmap, pui);
+		rescale_bitmap(&fs_info, bitmap, opt.min_block_size, pui);
 		update_used_blocks_count(&fs_info, bitmap);
 
 		/* skip check free space while torrent_only on */
@@ -329,6 +351,7 @@ int main(int argc, char **argv) {
 		/// read and check bitmap from partition
 		log_mesg(0, 0, 1, debug, "Calculating bitmap... Please wait... ");
 		read_bitmap(source, fs_info, bitmap, pui);
+		rescale_bitmap(&fs_info, bitmap, opt.min_block_size, pui);
 
 		/// check the dest partition size.
 		if (opt.dd && opt.check && !target_stdout) {
@@ -376,6 +399,7 @@ int main(int argc, char **argv) {
 		/// read and check bitmap from partition
 		log_mesg(0, 0, 1, debug, "Calculating bitmap... Please wait... ");
 		read_bitmap(source, fs_info, bitmap, pui);
+		rescale_bitmap(&fs_info, bitmap, opt.min_block_size, pui);
 
 		/// check the dest partition size.
 		/* skip check free space while torrent_only on */
