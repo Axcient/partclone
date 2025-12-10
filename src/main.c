@@ -553,8 +553,10 @@ int main(int argc, char **argv) {
 						memset(read_buffer, 0, blocks_read * block_size);
 						for (r_size = 0; r_size < blocks_read * block_size; r_size += PART_SECTOR_SIZE)
 							rescue_sector(&dfr, offset + r_size, read_buffer + r_size, &opt);
-					} else
+					} else {
 						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);
+						exit(101);
+					}
 				} else
 					log_mesg(0, 1, 1, debug, "read error: %s\n", strerror(errno));
 			}
@@ -1011,8 +1013,9 @@ int main(int argc, char **argv) {
 						memset(buffer, 0, blocks_read * block_size);
 						for (r_size = 0; r_size < blocks_read * block_size; r_size += PART_SECTOR_SIZE)
 							rescue_sector(&dfr, offset + r_size, buffer + r_size, &opt);
-					} else
-						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);
+					} else {
+						
+					}
 				} else
 					log_mesg(0, 1, 1, debug, "source read ERROR %s\n", strerror(errno));
 			}
@@ -1153,8 +1156,10 @@ int main(int argc, char **argv) {
 						memset(buffer, 0, blocks_read * block_size);
 						for (r_size = 0; r_size < blocks_read * block_size; r_size += PART_SECTOR_SIZE)
 							rescue_sector(&dfr, r_size, buffer + r_size, &opt);
-					} else
+					} else {
 						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);
+						exit(101);
+					}
 				} else if (r_size == 0){ // done for ddd
 				    /// write buffer to target
                                     if (opt.blockfile == 1){
