@@ -88,11 +88,16 @@ static void rescale_bitmap(file_system_info* fs_info, unsigned long* bitmap, uns
 	fs_info->block_size = min_block_size;
 }
 
-static void cleanup(int success, int dfr, int dfw, unsigned long *bitmap, int pui, int debug, pthread_t prog_thread)
-{
-	done = 1;
-	void *p_result;
-	int pres = pthread_join(prog_thread, &p_result);
+static int cleanup(int error_code, int dfr, int dfw, unsigned long *bitmap, int pui, int *debug, int* done, pthread_t prog_thread)
+{	
+	void *p_result = NULL;
+	int pres = 0;
+	time_t now = 0;
+	struct tm *ptm = NULL;
+
+	*done = 1;
+
+	pres = pthread_join(prog_thread, &p_result);
 	if(pres)
 	{
 	    log_mesg(0, 1, 1, debug, "%s, %i, thread join error\n", __func__, __LINE__);
@@ -101,7 +106,7 @@ static void cleanup(int success, int dfr, int dfw, unsigned long *bitmap, int pu
 #ifndef CHKIMG
 	sync_data(dfw, &opt);
 #endif
-	if (success)
+	if (!error_code)
 	{
 		print_finish_info(opt);
 	}
@@ -119,7 +124,7 @@ static void cleanup(int success, int dfr, int dfw, unsigned long *bitmap, int pu
 	free(bitmap);
 	close_pui(pui);
 #ifndef CHKIMG
-	if (success)
+	if (!error_code)
 	{
 		fprintf(stderr, "Cloned successfully.\n");
 	}
@@ -130,8 +135,9 @@ static void cleanup(int success, int dfr, int dfw, unsigned long *bitmap, int pu
 #else
 	printf("Checked successfully.\n");
 #endif
-	time_t now = time(&now);
-	struct tm *ptm = gmtime(&now);
+
+	now = time(&now);
+	ptm = gmtime(&now);
 	log_mesg(1, 0, 0, debug, "Partclone log finish at UTC %s", asctime(ptm));
 	if (opt.debug)
 		close_log();
@@ -139,6 +145,8 @@ static void cleanup(int success, int dfr, int dfw, unsigned long *bitmap, int pu
 	#ifdef MEMTRACE
 		muntrace();
 	#endif
+
+	return error_code;
 }
 /**
  * main function - for clone or restore data
@@ -607,8 +615,7 @@ int main(int argc, char **argv) {
 							rescue_sector(&dfr, offset + r_size, read_buffer + r_size, &opt);
 					} else {
 						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);
-						cleanup(0, dfr, dfw, bitmap, pui, debug, prog_thread);
-						exit(101);
+						return cleanup(101, dfr, dfw, bitmap, pui, debug, &done, prog_thread);
 					}
 				} else
 					log_mesg(0, 1, 1, debug, "read error: %s\n", strerror(errno));
@@ -1067,9 +1074,8 @@ int main(int argc, char **argv) {
 						for (r_size = 0; r_size < blocks_read * block_size; r_size += PART_SECTOR_SIZE)
 							rescue_sector(&dfr, offset + r_size, buffer + r_size, &opt);
 					} else {
-						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);
-						cleanup(0, dfr, dfw, bitmap, pui, debug, prog_thread);
-						exit(101);
+						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);						
+						return cleanup(101, dfr, dfw, bitmap, pui, debug, &done, prog_thread);
 					}
 				} else
 					log_mesg(0, 1, 1, debug, "source read ERROR %s\n", strerror(errno));
@@ -1212,9 +1218,8 @@ int main(int argc, char **argv) {
 						for (r_size = 0; r_size < blocks_read * block_size; r_size += PART_SECTOR_SIZE)
 							rescue_sector(&dfr, r_size, buffer + r_size, &opt);
 					} else {
-						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);
-						cleanup(0, dfr, dfw, bitmap, pui, debug, prog_thread);
-						exit(101);
+						log_mesg(0, 1, 1, debug, "%s", bad_sectors_warning_msg);						
+						return cleanup(101, dfr, dfw, bitmap, pui, debug, &done, prog_thread);
 					}
 				} else if (r_size == 0){ // done for ddd
 				    /// write buffer to target
@@ -1307,10 +1312,8 @@ int main(int argc, char **argv) {
 
 	}
 
-	
-	cleanup(1, dfr, dfw, bitmap, pui, debug, prog_thread);
 
-	return 0;      /// finish
+	return cleanup(0, dfr, dfw, bitmap, pui, debug, &done, prog_thread);  /// finish
 }
 
 void *thread_update_pui(void *arg) {
