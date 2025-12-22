@@ -88,7 +88,7 @@ static void rescale_bitmap(file_system_info* fs_info, unsigned long* bitmap, uns
 	fs_info->block_size = min_block_size;
 }
 
-static int cleanup(int error_code, int dfr, int dfw, unsigned long *bitmap, int pui, int *debug, int* done, pthread_t prog_thread)
+static int cleanup(int error_code, int dfr, int dfw, unsigned long *bitmap, int pui, int debug, int* done, pthread_t prog_thread)
 {	
 	void *p_result = NULL;
 	int pres = 0;
